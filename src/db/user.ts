@@ -1,7 +1,7 @@
 import { DataTypes, Sequelize } from "sequelize";
 
-export default (sequelize: Sequelize, modelName: string) =>
-  sequelize.define(
+export default (sequelize: Sequelize, modelName: string) => {
+  const User = sequelize.define(
     modelName,
     {
       name: {
@@ -57,3 +57,13 @@ export default (sequelize: Sequelize, modelName: string) =>
       timestamps: true,
     }
   );
+
+  (User as any).associate = (models: any) => {
+    User.hasMany(models.CompletedExercise, {
+      foreignKey: "userID",
+      as: "completedExercises",
+    });
+  };
+
+  return User;
+};

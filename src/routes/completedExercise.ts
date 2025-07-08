@@ -83,6 +83,7 @@ router.post(
           include: [
             {
               model: models.CompletedExercise,
+              as: "completedExercises",
               include: [
                 {
                   model: models.Exercise,
