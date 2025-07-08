@@ -12,6 +12,11 @@ export default (
   const CompletedExerciseCtor = sequelize.define<CompletedExerciseModel>(
     modelName,
     {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
       userID: {
         type: DataTypes.INTEGER,
         allowNull: false,
