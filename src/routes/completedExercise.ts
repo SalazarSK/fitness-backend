@@ -49,6 +49,7 @@ router.post(
       try {
         const completedExercises = await CompletedExercise.findAll({
           where: { userID: req.user.id },
+          attributes: ["id", "exerciseID", "completedAt", "duration"],
           include: [
             {
               model: Exercise,
@@ -104,6 +105,36 @@ router.post(
         });
       } catch (error) {
         return res.status(500).json({ message: "Error fetching user", error });
+      }
+    }
+  ),
+
+  router.delete(
+    "/:id",
+    authenticateToken,
+    async (req: Request, res: Response): Promise<any> => {
+      const { id } = req.params;
+
+      try {
+        const exercise = await models.CompletedExercise.findByPk(id);
+
+        if (!exercise) {
+          return res
+            .status(404)
+            .json({ message: "Completed exercise not found" });
+        }
+
+        if (req.user.role !== "ADMIN" && exercise.userID !== req.user.id) {
+          return res.status(403).json({ message: "Access denied" });
+        }
+
+        await exercise.destroy();
+        return res.json({ message: "Completed exercise removed" });
+      } catch (error) {
+        console.error(error);
+        return res
+          .status(500)
+          .json({ message: "Error removing completed exercise", error });
       }
     }
   )

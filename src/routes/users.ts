@@ -39,12 +39,15 @@ router.get(
       return res.status(403).json({ message: "Access denied" });
     }
 
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(id, {
+      attributes: ["name", "surname", "age", "nickName"],
+    });
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json({ data: user, message: "User details" });
+    res.json({ data: user, message: "User profile data" });
   }
 );
 
