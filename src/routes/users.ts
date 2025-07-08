@@ -9,15 +9,25 @@ const router = Router();
 const { User } = models;
 
 //INFO: Authorization require
-router.get(
-  "/",
-  authenticateToken,
-  authorizeAdmin,
-  async (_req: Request, res: Response) => {
-    const users = await User.findAll();
+router.get("/", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    let users;
+
+    if (req.user.role === "ADMIN") {
+      users = await User.findAll({
+        attributes: { exclude: ["password"] },
+      });
+    } else {
+      users = await User.findAll({
+        attributes: ["id", "nickName"],
+      });
+    }
+
     res.json({ data: users, message: "List of users" });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching users", error });
   }
-);
+});
 
 router.get(
   "/:id",
