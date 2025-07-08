@@ -1,36 +1,48 @@
-import fs from 'fs'
-import { Sequelize } from 'sequelize'
+import fs from "fs";
+import { Sequelize } from "sequelize";
 
-import defineExercise from './exercise'
-import defineProgram from './program'
+import defineExercise from "./exercise";
+import defineProgram from "./program";
+import defineUser from "./user";
+import defineCompletedExercise from "./completedExercise";
 
-const sequelize: Sequelize = new Sequelize('postgresql://localhost:5432/fitness_app', {
-	logging: false
-})
+const sequelize: Sequelize = new Sequelize(process.env.DB_URL, {
+  logging: false,
+  dialect: "postgres",
+});
 
-sequelize.authenticate().catch((e: any) => console.error(`Unable to connect to the database${e}.`))
+sequelize
+  .authenticate()
+  .catch((e: any) => console.error(`Unable to connect to the database${e}.`));
 
-const Exercise = defineExercise(sequelize, 'exercise')
-const Program = defineProgram(sequelize, 'program')
+const Exercise = defineExercise(sequelize, "exercise");
+const Program = defineProgram(sequelize, "program");
+const User = defineUser(sequelize, "user");
+const CompletedExercise = defineCompletedExercise(
+  sequelize,
+  "completedExercise"
+);
 
 const models = {
-	Exercise,
-	Program
-}
-type Models = typeof models
+  Exercise,
+  Program,
+  User,
+  CompletedExercise,
+};
+type Models = typeof models;
 
 // check if every model is imported
-const modelsFiles = fs.readdirSync(__dirname)
+const modelsFiles = fs.readdirSync(__dirname);
 // -1 because index.ts can not be counted
-if (Object.keys(models).length !== (modelsFiles.length - 1)) {
-	throw new Error('You probably forgot import database model!')
+if (Object.keys(models).length !== modelsFiles.length - 1) {
+  throw new Error("You probably forgot import database model!");
 }
 
 Object.values(models).forEach((value: any) => {
-	if (value.associate) {
-		value.associate(models)
-	}
-})
+  if (value.associate) {
+    value.associate(models);
+  }
+});
 
-export { models, sequelize }
-export type { Models }
+export { models, sequelize };
+export type { Models };

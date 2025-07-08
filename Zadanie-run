@@ -1,0 +1,4 @@
+First RUN:
+ - Terminal command: docker compose -f docker-compose.dev.yml up --build
+ Second RUN:
+ - Terminal command: docker compose -f docker-compose.dev.yml up
