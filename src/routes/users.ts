@@ -1,9 +1,11 @@
 import { Router, Request, Response } from "express";
 import { models } from "../db";
+import { authenticateToken } from "../middleware/authMiddleware";
+import { validateRequest } from "../middleware/validationMiddleware";
 import {
-  authenticateToken,
-  authorizeAdmin,
-} from "../middleware/authMiddleware";
+  updateUserValidation,
+  userIdParamValidation,
+} from "../validators/userValidator";
 
 const router = Router();
 const { User } = models;
@@ -32,6 +34,8 @@ router.get("/", authenticateToken, async (req: Request, res: Response) => {
 router.get(
   "/:id",
   authenticateToken,
+  userIdParamValidation,
+  validateRequest,
   async (req: Request, res: Response): Promise<any> => {
     const { id } = req.params;
 
@@ -54,6 +58,8 @@ router.get(
 router.put(
   "/:id",
   authenticateToken,
+  updateUserValidation,
+  validateRequest,
   async (req: Request, res: Response): Promise<any> => {
     const { id } = req.params;
     const { name, surname, nickName, age, role } = req.body;
