@@ -8,9 +8,10 @@ import {
   registerValidation,
 } from "../validators/authValidator";
 import { validateRequest } from "../middleware/validationMiddleware";
+import { getMessage } from "../services/localizationService";
 
 const router: Router = Router();
-const JWT_SECRET = "goodRequest987"; //For consistency it is better to have it setup in env so DEV and PROD has different key
+const JWT_SECRET = "goodRequest987"; //TODO generate this
 
 router.post(
   "/register",
@@ -18,20 +19,30 @@ router.post(
   validateRequest,
   async (req: Request, res: Response): Promise<any> => {
     const { name, surname, nickName, email, password, age, role } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = (await models.User.create({
-      name,
-      surname,
-      nickName,
-      email,
-      password: hashedPassword,
-      age,
-      role,
-    })) as UserInstance;
-    res.json({
-      data: { id: user.id },
-      message: "You have successfully registered",
-    });
+    const language = req.headers.language as string;
+
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = (await models.User.create({
+        name,
+        surname,
+        nickName,
+        email,
+        password: hashedPassword,
+        age,
+        role,
+      })) as UserInstance;
+
+      res.json({
+        data: { id: user.id },
+        message: getMessage(language, "registrationSuccess"),
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: getMessage(language, "registrationError"),
+        error,
+      });
+    }
   }
 );
 
@@ -41,17 +52,36 @@ router.post(
   validateRequest,
   async (req: Request, res: Response): Promise<any> => {
     const { email, password } = req.body;
-    const user = (await models.User.findOne({
-      where: { email },
-    })) as UserInstance;
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
+    const language = req.headers.language as string;
 
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
-    res.json({ data: { token }, message: "Login successful" });
+    try {
+      const user = (await models.User.findOne({
+        where: { email },
+      })) as UserInstance;
+
+      const isValidPassword =
+        user && (await bcrypt.compare(password, user.password));
+
+      if (!isValidPassword) {
+        return res
+          .status(401)
+          .json({ message: getMessage(language, "invalidCredentials") });
+      }
+
+      const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
+        expiresIn: "1h",
+      });
+
+      res.json({
+        data: { token },
+        message: getMessage(language, "loginSuccess"),
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: getMessage(language, "loginError"),
+        error,
+      });
+    }
   }
 );
 

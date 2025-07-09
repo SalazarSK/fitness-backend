@@ -6,12 +6,15 @@ import {
   updateUserValidation,
   userIdParamValidation,
 } from "../validators/userValidator";
+import { getMessage } from "../services/localizationService";
 
 const router = Router();
 const { User } = models;
 
 //INFO: Authorization require
 router.get("/", authenticateToken, async (req: Request, res: Response) => {
+  const lang = req.headers.language as string;
+
   try {
     let users;
 
@@ -25,9 +28,15 @@ router.get("/", authenticateToken, async (req: Request, res: Response) => {
       });
     }
 
-    res.json({ data: users, message: "List of users" });
+    res.json({
+      data: users,
+      message: getMessage(lang, "listOfUsers"),
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching users", error });
+    res.status(500).json({
+      message: getMessage(lang, "errorFetchingUser"),
+      error,
+    });
   }
 });
 
@@ -37,10 +46,13 @@ router.get(
   userIdParamValidation,
   validateRequest,
   async (req: Request, res: Response): Promise<any> => {
+    const lang = req.headers.language as string;
     const { id } = req.params;
 
     if (req.user.role !== "ADMIN" && req.user.id !== Number(id)) {
-      return res.status(403).json({ message: "Access denied" });
+      return res
+        .status(403)
+        .json({ message: getMessage(lang, "accessDenied") });
     }
 
     const user = await User.findByPk(id, {
@@ -51,7 +63,10 @@ router.get(
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json({ data: user, message: "User profile data" });
+    res.json({
+      data: user,
+      message: getMessage(lang, "userProfileData"),
+    });
   }
 );
 
@@ -61,11 +76,14 @@ router.put(
   updateUserValidation,
   validateRequest,
   async (req: Request, res: Response): Promise<any> => {
+    const lang = req.headers.language as string;
     const { id } = req.params;
     const { name, surname, nickName, age, role } = req.body;
 
     if (req.user.role !== "ADMIN" && req.user.id !== Number(id)) {
-      return res.status(403).json({ message: "Access denied" });
+      return res
+        .status(403)
+        .json({ message: getMessage(lang, "accessDenied") });
     }
 
     try {
@@ -79,9 +97,15 @@ router.put(
       }
 
       const updatedUser = await User.findByPk(id);
-      res.json({ data: updatedUser, message: "User updated" });
+      res.json({
+        data: updatedUser,
+        message: getMessage(lang, "userUpdated"),
+      });
     } catch (error) {
-      res.status(500).json({ message: "Error updating user", error });
+      res.status(500).json({
+        message: getMessage(lang, "errorUpdatingUser"),
+        error,
+      });
     }
   }
 

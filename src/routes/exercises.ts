@@ -1,5 +1,4 @@
 import { Router, Request, Response } from "express";
-
 import { models } from "../db";
 import {
   authenticateToken,
@@ -13,9 +12,9 @@ import {
   deleteExerciseValidation,
   getExerciseQueryValidation,
 } from "../validators/exerciseValidator";
+import { getMessage } from "../services/localizationService";
 
 const router = Router();
-
 const { Exercise, Program } = models;
 
 function parseExerciseQuery(query: any) {
@@ -41,6 +40,7 @@ export default () => {
     getExerciseQueryValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
+      const lang = req.headers.language as string;
       const { page, limit, programID, search } = parseExerciseQuery(req.query);
 
       const where: any = {};
@@ -56,7 +56,9 @@ export default () => {
         const offset = (finalPage - 1) * finalLimit;
 
         if (offset >= total && total > 0) {
-          return res.status(404).json({ message: "Page does not exist" });
+          return res
+            .status(404)
+            .json({ message: getMessage(lang, "pageNotExist") });
         }
 
         const { rows: exercises } = await Exercise.findAndCountAll({
@@ -75,12 +77,13 @@ export default () => {
             limit: finalLimit,
             pages: Math.ceil(total / finalLimit),
           },
-          message: "List of exercises",
+          message: getMessage(lang, "exerciseList"),
         });
       } catch (error) {
-        return res
-          .status(500)
-          .json({ message: "Error fetching exercises", error });
+        return res.status(500).json({
+          message: getMessage(lang, "errorFetchingCompletedExercises"),
+          error,
+        });
       }
     }
   );
@@ -92,18 +95,24 @@ export default () => {
     createExerciseValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
+      const lang = req.headers.language as string;
       const { name, difficulty, programID } = req.body;
+
       if (!name || !difficulty || !programID) {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
       try {
         const exercise = await Exercise.create({ name, difficulty, programID });
-        return res.status(201).json({ message: "Exercise created", exercise });
+        return res.status(201).json({
+          message: getMessage(lang, "exerciseCreated"),
+          exercise,
+        });
       } catch (error) {
-        return res
-          .status(500)
-          .json({ message: "Error creating exercise", error });
+        return res.status(500).json({
+          message: getMessage(lang, "errorCreatingExercise"),
+          error,
+        });
       }
     }
   );
@@ -115,6 +124,7 @@ export default () => {
     deleteExerciseValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
+      const lang = req.headers.language as string;
       const { id } = req.params;
 
       try {
@@ -123,11 +133,14 @@ export default () => {
           return res.status(404).json({ message: "Exercise not found" });
         }
 
-        return res.status(200).json({ message: "Exercise deleted" });
-      } catch (error) {
         return res
-          .status(500)
-          .json({ message: "Error deleting exercise", error });
+          .status(200)
+          .json({ message: getMessage(lang, "exerciseDeleted") });
+      } catch (error) {
+        return res.status(500).json({
+          message: getMessage(lang, "errorDeletingExercise"),
+          error,
+        });
       }
     }
   );
@@ -139,6 +152,7 @@ export default () => {
     updateExerciseValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
+      const lang = req.headers.language as string;
       const { id } = req.params;
       const { name, description, duration } = req.body;
 
@@ -153,13 +167,15 @@ export default () => {
         }
 
         const updatedExercise = await Exercise.findByPk(id);
-        return res
-          .status(200)
-          .json({ message: "Exercise updated", data: updatedExercise });
+        return res.status(200).json({
+          message: getMessage(lang, "exerciseUpdated"),
+          data: updatedExercise,
+        });
       } catch (error) {
-        return res
-          .status(500)
-          .json({ message: "Error updating exercise", error });
+        return res.status(500).json({
+          message: getMessage(lang, "errorUpdatingExercise"),
+          error,
+        });
       }
     }
   );
