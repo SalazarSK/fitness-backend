@@ -108,7 +108,6 @@ router.put(
       });
     }
   }
-
   //INFO: Without authorization
 );
 
