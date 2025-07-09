@@ -11,6 +11,7 @@ import {
   getUserCompletedExercisesValidation,
   trackCompletedExerciseValidation,
 } from "../validators/completedExerciseValidator";
+import { getMessage } from "../services/localizationService";
 
 const router = Router();
 const { CompletedExercise, Exercise, User } = models;
@@ -22,6 +23,7 @@ router.post(
   validateRequest,
   async (req: Request, res: Response): Promise<any> => {
     const { exerciseID, duration } = req.body;
+    const lang = req.headers.language as string;
 
     if (!exerciseID || !duration) {
       return res
@@ -32,7 +34,9 @@ router.post(
     try {
       const exercise = await Exercise.findByPk(exerciseID);
       if (!exercise) {
-        return res.status(404).json({ message: "Exercise not found" });
+        return res
+          .status(404)
+          .json({ message: getMessage(lang, "errorFetchingUser") });
       }
 
       const tracked = await CompletedExercise.create({
@@ -41,13 +45,15 @@ router.post(
         duration,
       });
 
-      return res
-        .status(201)
-        .json({ message: "Exercise tracked", data: tracked });
+      return res.status(201).json({
+        message: getMessage(lang, "exerciseTracked"),
+        data: tracked,
+      });
     } catch (error) {
-      return res
-        .status(500)
-        .json({ message: "Error tracking exercise", error });
+      return res.status(500).json({
+        message: getMessage(lang, "errorTrackingExercise"),
+        error,
+      });
     }
   }
 );
@@ -56,6 +62,8 @@ router.get(
   "/me/completed-exercises",
   authenticateToken,
   async (req: Request, res: Response): Promise<any> => {
+    const lang = req.headers.language as string;
+
     try {
       const completedExercises = await CompletedExercise.findAll({
         where: { userID: req.user.id },
@@ -71,12 +79,13 @@ router.get(
 
       return res.json({
         data: completedExercises,
-        message: "Completed exercises list",
+        message: getMessage(lang, "completedExercisesList"),
       });
     } catch (error) {
-      return res
-        .status(500)
-        .json({ message: "Error fetching completed exercises", error });
+      return res.status(500).json({
+        message: getMessage(lang, "errorFetchingCompletedExercises"),
+        error,
+      });
     }
   }
 );
@@ -89,6 +98,7 @@ router.get(
   validateRequest,
   async (req: Request, res: Response): Promise<any> => {
     const { id } = req.params;
+    const lang = req.headers.language as string;
 
     try {
       const user = await User.findByPk(id, {
@@ -108,15 +118,20 @@ router.get(
       });
 
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return res
+          .status(404)
+          .json({ message: getMessage(lang, "errorFetchingUser") });
       }
 
       return res.json({
         data: user,
-        message: "User detail with completed exercises",
+        message: getMessage(lang, "userDetailWithExercises"),
       });
     } catch (error) {
-      return res.status(500).json({ message: "Error fetching user", error });
+      return res.status(500).json({
+        message: getMessage(lang, "errorFetchingUser"),
+        error,
+      });
     }
   }
 );
@@ -128,6 +143,7 @@ router.delete(
   validateRequest,
   async (req: Request, res: Response): Promise<any> => {
     const { id } = req.params;
+    const lang = req.headers.language as string;
 
     try {
       const exercise = await CompletedExercise.findByPk(id);
@@ -135,19 +151,24 @@ router.delete(
       if (!exercise) {
         return res
           .status(404)
-          .json({ message: "Completed exercise not found" });
+          .json({ message: getMessage(lang, "completedExerciseRemoved") });
       }
 
       if (req.user.role !== "ADMIN" && exercise.userID !== req.user.id) {
-        return res.status(403).json({ message: "Access denied" });
+        return res
+          .status(403)
+          .json({ message: getMessage(lang, "accessDenied") });
       }
 
       await exercise.destroy();
-      return res.json({ message: "Completed exercise removed" });
+      return res.json({
+        message: getMessage(lang, "completedExerciseRemoved"),
+      });
     } catch (error) {
-      return res
-        .status(500)
-        .json({ message: "Error removing completed exercise", error });
+      return res.status(500).json({
+        message: getMessage(lang, "errorRemovingCompletedExercise"),
+        error,
+      });
     }
   }
 );

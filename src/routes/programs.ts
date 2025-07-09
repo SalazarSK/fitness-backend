@@ -1,11 +1,9 @@
 import { Router, Request, Response, NextFunction } from "express";
-
 import { models } from "../db";
 import {
   authenticateToken,
   authorizeAdmin,
 } from "../middleware/authMiddleware";
-
 import {
   createProgramValidation,
   updateProgramValidation,
@@ -14,19 +12,21 @@ import {
   removeExerciseFromProgramValidation,
 } from "../validators/programsValidator";
 import { validateRequest } from "../middleware/validationMiddleware";
+import { getMessage } from "../services/localizationService";
 
 const router = Router();
-
 const { Program, Exercise } = models;
 
 export default () => {
   router.get(
     "/",
-    async (_req: Request, res: Response, _next: NextFunction): Promise<any> => {
+    async (req: Request, res: Response, _next: NextFunction): Promise<any> => {
+      const lang = req.headers.language as string;
+
       const programs = await Program.findAll();
       return res.json({
         data: programs,
-        message: "List of programs",
+        message: getMessage(lang, "exerciseList"),
       });
     }
   );
@@ -38,18 +38,21 @@ export default () => {
     createProgramValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
+      const lang = req.headers.language as string;
       const { name } = req.body;
       if (!name) return res.status(400).json({ message: "Name is required" });
 
       try {
         const program = await Program.create({ name });
-        return res
-          .status(201)
-          .json({ message: "Program created", data: program });
+        return res.status(201).json({
+          message: getMessage(lang, "programCreated"),
+          data: program,
+        });
       } catch (err) {
-        return res
-          .status(500)
-          .json({ message: "Error creating program", error: err });
+        return res.status(500).json({
+          message: getMessage(lang, "errorCreatingProgram"),
+          error: err,
+        });
       }
     }
   );
@@ -61,6 +64,7 @@ export default () => {
     updateProgramValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
+      const lang = req.headers.language as string;
       const { id } = req.params;
       const { name } = req.body;
 
@@ -70,13 +74,15 @@ export default () => {
           return res.status(404).json({ message: "Program not found" });
 
         const updatedProgram = await Program.findByPk(id);
-        return res
-          .status(200)
-          .json({ message: "Program updated", data: updatedProgram });
+        return res.status(200).json({
+          message: getMessage(lang, "programUpdated"),
+          data: updatedProgram,
+        });
       } catch (err) {
-        return res
-          .status(500)
-          .json({ message: "Error updating program", error: err });
+        return res.status(500).json({
+          message: getMessage(lang, "errorUpdatingProgram"),
+          error: err,
+        });
       }
     }
   );
@@ -88,6 +94,7 @@ export default () => {
     deleteProgramValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
+      const lang = req.headers.language as string;
       const { id } = req.params;
 
       try {
@@ -95,11 +102,14 @@ export default () => {
         if (!deleted)
           return res.status(404).json({ message: "Program not found" });
 
-        return res.status(200).json({ message: "Program deleted" });
-      } catch (err) {
         return res
-          .status(500)
-          .json({ message: "Error deleting program", error: err });
+          .status(200)
+          .json({ message: getMessage(lang, "programDeleted") });
+      } catch (err) {
+        return res.status(500).json({
+          message: getMessage(lang, "errorDeletingProgram"),
+          error: err,
+        });
       }
     }
   );
@@ -111,6 +121,7 @@ export default () => {
     assignExerciseToProgramValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
+      const lang = req.headers.language as string;
       const { programId, exerciseId } = req.params;
 
       try {
@@ -124,23 +135,23 @@ export default () => {
           return res.status(404).json({ message: "Exercise not found" });
         }
 
-        //check if already assigned
         if (Number(exercise.dataValues.programID) === Number(programId)) {
-          return res
-            .status(400)
-            .json({ message: "Exercise is already in this program" });
+          return res.status(400).json({
+            message: getMessage(lang, "exerciseAddedToProgram"),
+          });
         }
 
         await exercise.update({ programID: programId });
 
         return res.status(200).json({
-          message: "Exercise added to program",
+          message: getMessage(lang, "exerciseAddedToProgram"),
           exercise,
         });
       } catch (err) {
-        return res
-          .status(500)
-          .json({ message: "Error assigning exercise", error: err });
+        return res.status(500).json({
+          message: getMessage(lang, "errorAssigningExercise"),
+          error: err,
+        });
       }
     }
   );
@@ -152,6 +163,7 @@ export default () => {
     removeExerciseFromProgramValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
+      const lang = req.headers.language as string;
       const { exerciseId } = req.params;
 
       try {
@@ -160,13 +172,15 @@ export default () => {
           return res.status(404).json({ message: "Exercise not found" });
 
         await exercise.update({ programID: null });
-        return res
-          .status(200)
-          .json({ message: "Exercise removed from program", exercise });
+        return res.status(200).json({
+          message: getMessage(lang, "exerciseRemovedFromProgram"),
+          exercise,
+        });
       } catch (err) {
-        return res
-          .status(500)
-          .json({ message: "Error removing exercise", error: err });
+        return res.status(500).json({
+          message: getMessage(lang, "errorRemovingExercise"),
+          error: err,
+        });
       }
     }
   );
