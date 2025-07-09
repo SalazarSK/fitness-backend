@@ -36,6 +36,8 @@ const messages = {
     listOfUsers: "List of users",
     userProfileData: "User profile data",
     accessDenied: "Access denied",
+    internalServerError: "Something went wrong",
+    unexpectedError: "Unexpected error",
   },
   sk: {
     registrationSuccess: "Úspešná registrácia",
@@ -75,6 +77,8 @@ const messages = {
     listOfUsers: "Zoznam používateľov",
     userProfileData: "Údaje o používateľovi",
     accessDenied: "Prístup bol zamietnutý",
+    internalServerError: "Niečo sa pokazilo",
+    unexpectedError: "Neočakávaná chyba",
   },
 };
 

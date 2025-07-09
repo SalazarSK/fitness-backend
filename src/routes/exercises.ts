@@ -13,6 +13,7 @@ import {
   getExerciseQueryValidation,
 } from "../validators/exerciseValidator";
 import { getMessage } from "../services/localizationService";
+import { AppError } from "../utils/AppError";
 
 const router = Router();
 const { Exercise, Program } = models;
@@ -47,44 +48,34 @@ export default () => {
       if (programID) where.programID = programID;
       if (search) where.name = { [Op.iLike]: `%${search}%` };
 
-      try {
-        const total = await Exercise.count({ where });
+      const total = await Exercise.count({ where });
 
-        const finalLimit =
-          page === null && limit === null ? total : limit ?? 10;
-        const finalPage = page ?? 1;
-        const offset = (finalPage - 1) * finalLimit;
+      const finalLimit = page === null && limit === null ? total : limit ?? 10;
+      const finalPage = page ?? 1;
+      const offset = (finalPage - 1) * finalLimit;
 
-        if (offset >= total && total > 0) {
-          return res
-            .status(404)
-            .json({ message: getMessage(lang, "pageNotExist") });
-        }
-
-        const { rows: exercises } = await Exercise.findAndCountAll({
-          where,
-          include: [{ model: Program }],
-          offset,
-          limit: finalLimit,
-          order: [["createdAt", "DESC"]],
-        });
-
-        return res.json({
-          data: exercises,
-          pagination: {
-            total,
-            page: finalPage,
-            limit: finalLimit,
-            pages: Math.ceil(total / finalLimit),
-          },
-          message: getMessage(lang, "exerciseList"),
-        });
-      } catch (error) {
-        return res.status(500).json({
-          message: getMessage(lang, "errorFetchingCompletedExercises"),
-          error,
-        });
+      if (offset >= total && total > 0) {
+        throw new AppError(getMessage(lang, "pageNotExist"), 404);
       }
+
+      const { rows: exercises } = await Exercise.findAndCountAll({
+        where,
+        include: [{ model: Program }],
+        offset,
+        limit: finalLimit,
+        order: [["createdAt", "DESC"]],
+      });
+
+      return res.status(200).json({
+        data: exercises,
+        pagination: {
+          total,
+          page: finalPage,
+          limit: finalLimit,
+          pages: Math.ceil(total / finalLimit),
+        },
+        message: getMessage(lang, "exerciseList"),
+      });
     }
   );
 
@@ -99,21 +90,14 @@ export default () => {
       const { name, difficulty, programID } = req.body;
 
       if (!name || !difficulty || !programID) {
-        return res.status(400).json({ message: "Missing required fields" });
+        throw new AppError("Missing required fields", 400);
       }
 
-      try {
-        const exercise = await Exercise.create({ name, difficulty, programID });
-        return res.status(201).json({
-          message: getMessage(lang, "exerciseCreated"),
-          exercise,
-        });
-      } catch (error) {
-        return res.status(500).json({
-          message: getMessage(lang, "errorCreatingExercise"),
-          error,
-        });
-      }
+      const exercise = await Exercise.create({ name, difficulty, programID });
+      return res.status(201).json({
+        message: getMessage(lang, "exerciseCreated"),
+        exercise,
+      });
     }
   );
 
@@ -127,21 +111,14 @@ export default () => {
       const lang = req.headers.language as string;
       const { id } = req.params;
 
-      try {
-        const deleted = await Exercise.destroy({ where: { id } });
-        if (!deleted) {
-          return res.status(404).json({ message: "Exercise not found" });
-        }
-
-        return res
-          .status(200)
-          .json({ message: getMessage(lang, "exerciseDeleted") });
-      } catch (error) {
-        return res.status(500).json({
-          message: getMessage(lang, "errorDeletingExercise"),
-          error,
-        });
+      const deleted = await Exercise.destroy({ where: { id } });
+      if (!deleted) {
+        throw new AppError("Exercise not found", 404);
       }
+
+      return res
+        .status(200)
+        .json({ message: getMessage(lang, "exerciseDeleted") });
     }
   );
 
@@ -156,27 +133,20 @@ export default () => {
       const { id } = req.params;
       const { name, description, duration } = req.body;
 
-      try {
-        const [updated] = await Exercise.update(
-          { name, description, duration },
-          { where: { id } }
-        );
+      const [updated] = await Exercise.update(
+        { name, description, duration },
+        { where: { id } }
+      );
 
-        if (!updated) {
-          return res.status(404).json({ message: "Exercise not found" });
-        }
-
-        const updatedExercise = await Exercise.findByPk(id);
-        return res.status(200).json({
-          message: getMessage(lang, "exerciseUpdated"),
-          data: updatedExercise,
-        });
-      } catch (error) {
-        return res.status(500).json({
-          message: getMessage(lang, "errorUpdatingExercise"),
-          error,
-        });
+      if (!updated) {
+        throw new AppError("Exercise not found", 404);
       }
+
+      const updatedExercise = await Exercise.findByPk(id);
+      return res.status(200).json({
+        message: getMessage(lang, "exerciseUpdated"),
+        data: updatedExercise,
+      });
     }
   );
 

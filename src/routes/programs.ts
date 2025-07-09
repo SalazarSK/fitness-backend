@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
 import { models } from "../db";
 import {
   authenticateToken,
@@ -13,23 +13,22 @@ import {
 } from "../validators/programsValidator";
 import { validateRequest } from "../middleware/validationMiddleware";
 import { getMessage } from "../services/localizationService";
+import { AppError } from "../utils/AppError";
 
 const router = Router();
 const { Program, Exercise } = models;
 
 export default () => {
-  router.get(
-    "/",
-    async (req: Request, res: Response, _next: NextFunction): Promise<any> => {
-      const lang = req.headers.language as string;
+  router.get("/", async (req: Request, res: Response): Promise<any> => {
+    const lang = req.headers.language as string;
 
-      const programs = await Program.findAll();
-      return res.json({
-        data: programs,
-        message: getMessage(lang, "exerciseList"),
-      });
-    }
-  );
+    const programs = await Program.findAll();
+
+    return res.json({
+      data: programs,
+      message: getMessage(lang, "exerciseList"),
+    });
+  });
 
   router.post(
     "/",
@@ -40,20 +39,15 @@ export default () => {
     async (req: Request, res: Response): Promise<any> => {
       const lang = req.headers.language as string;
       const { name } = req.body;
-      if (!name) return res.status(400).json({ message: "Name is required" });
 
-      try {
-        const program = await Program.create({ name });
-        return res.status(201).json({
-          message: getMessage(lang, "programCreated"),
-          data: program,
-        });
-      } catch (err) {
-        return res.status(500).json({
-          message: getMessage(lang, "errorCreatingProgram"),
-          error: err,
-        });
-      }
+      if (!name) throw new AppError("Name is required", 400);
+
+      const program = await Program.create({ name });
+
+      return res.status(201).json({
+        message: getMessage(lang, "programCreated"),
+        data: program,
+      });
     }
   );
 
@@ -68,22 +62,15 @@ export default () => {
       const { id } = req.params;
       const { name } = req.body;
 
-      try {
-        const [updated] = await Program.update({ name }, { where: { id } });
-        if (!updated)
-          return res.status(404).json({ message: "Program not found" });
+      const [updated] = await Program.update({ name }, { where: { id } });
+      if (!updated) throw new AppError("Program not found", 404);
 
-        const updatedProgram = await Program.findByPk(id);
-        return res.status(200).json({
-          message: getMessage(lang, "programUpdated"),
-          data: updatedProgram,
-        });
-      } catch (err) {
-        return res.status(500).json({
-          message: getMessage(lang, "errorUpdatingProgram"),
-          error: err,
-        });
-      }
+      const updatedProgram = await Program.findByPk(id);
+
+      return res.status(200).json({
+        message: getMessage(lang, "programUpdated"),
+        data: updatedProgram,
+      });
     }
   );
 
@@ -97,20 +84,12 @@ export default () => {
       const lang = req.headers.language as string;
       const { id } = req.params;
 
-      try {
-        const deleted = await Program.destroy({ where: { id } });
-        if (!deleted)
-          return res.status(404).json({ message: "Program not found" });
+      const deleted = await Program.destroy({ where: { id } });
+      if (!deleted) throw new AppError("Program not found", 404);
 
-        return res
-          .status(200)
-          .json({ message: getMessage(lang, "programDeleted") });
-      } catch (err) {
-        return res.status(500).json({
-          message: getMessage(lang, "errorDeletingProgram"),
-          error: err,
-        });
-      }
+      return res
+        .status(200)
+        .json({ message: getMessage(lang, "programDeleted") });
     }
   );
 
@@ -124,35 +103,22 @@ export default () => {
       const lang = req.headers.language as string;
       const { programId, exerciseId } = req.params;
 
-      try {
-        const program = await Program.findByPk(programId);
-        if (!program) {
-          return res.status(404).json({ message: "Program not found" });
-        }
+      const program = await Program.findByPk(programId);
+      if (!program) throw new AppError("Program not found", 404);
 
-        const exercise = await Exercise.findByPk(exerciseId);
-        if (!exercise) {
-          return res.status(404).json({ message: "Exercise not found" });
-        }
+      const exercise = await Exercise.findByPk(exerciseId);
+      if (!exercise) throw new AppError("Exercise not found", 404);
 
-        if (Number(exercise.dataValues.programID) === Number(programId)) {
-          return res.status(400).json({
-            message: getMessage(lang, "exerciseAddedToProgram"),
-          });
-        }
-
-        await exercise.update({ programID: programId });
-
-        return res.status(200).json({
-          message: getMessage(lang, "exerciseAddedToProgram"),
-          exercise,
-        });
-      } catch (err) {
-        return res.status(500).json({
-          message: getMessage(lang, "errorAssigningExercise"),
-          error: err,
-        });
+      if (Number(exercise.dataValues.programID) === Number(programId)) {
+        throw new AppError(getMessage(lang, "exerciseAddedToProgram"), 400);
       }
+
+      await exercise.update({ programID: programId });
+
+      return res.status(200).json({
+        message: getMessage(lang, "exerciseAddedToProgram"),
+        exercise,
+      });
     }
   );
 
@@ -166,22 +132,15 @@ export default () => {
       const lang = req.headers.language as string;
       const { exerciseId } = req.params;
 
-      try {
-        const exercise = await Exercise.findByPk(exerciseId);
-        if (!exercise)
-          return res.status(404).json({ message: "Exercise not found" });
+      const exercise = await Exercise.findByPk(exerciseId);
+      if (!exercise) throw new AppError("Exercise not found", 404);
 
-        await exercise.update({ programID: null });
-        return res.status(200).json({
-          message: getMessage(lang, "exerciseRemovedFromProgram"),
-          exercise,
-        });
-      } catch (err) {
-        return res.status(500).json({
-          message: getMessage(lang, "errorRemovingExercise"),
-          error: err,
-        });
-      }
+      await exercise.update({ programID: null });
+
+      return res.status(200).json({
+        message: getMessage(lang, "exerciseRemovedFromProgram"),
+        exercise,
+      });
     }
   );
 

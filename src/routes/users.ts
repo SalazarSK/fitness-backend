@@ -7,15 +7,18 @@ import {
   userIdParamValidation,
 } from "../validators/userValidator";
 import { getMessage } from "../services/localizationService";
+import { AppError } from "../utils/AppError";
 
 const router = Router();
 const { User } = models;
 
 //INFO: Authorization require
-router.get("/", authenticateToken, async (req: Request, res: Response) => {
-  const lang = req.headers.language as string;
+router.get(
+  "/",
+  authenticateToken,
+  async (req: Request, res: Response): Promise<any> => {
+    const lang = req.headers.language as string;
 
-  try {
     let users;
 
     if (req.user.role === "ADMIN") {
@@ -28,17 +31,12 @@ router.get("/", authenticateToken, async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
+    return res.json({
       data: users,
       message: getMessage(lang, "listOfUsers"),
     });
-  } catch (error) {
-    res.status(500).json({
-      message: getMessage(lang, "errorFetchingUser"),
-      error,
-    });
   }
-});
+);
 
 router.get(
   "/:id",
@@ -50,9 +48,7 @@ router.get(
     const { id } = req.params;
 
     if (req.user.role !== "ADMIN" && req.user.id !== Number(id)) {
-      return res
-        .status(403)
-        .json({ message: getMessage(lang, "accessDenied") });
+      throw new AppError(getMessage(lang, "accessDenied"), 403);
     }
 
     const user = await User.findByPk(id, {
@@ -60,10 +56,10 @@ router.get(
     });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      throw new AppError("User not found", 404);
     }
 
-    res.json({
+    return res.json({
       data: user,
       message: getMessage(lang, "userProfileData"),
     });
@@ -81,32 +77,24 @@ router.put(
     const { name, surname, nickName, age, role } = req.body;
 
     if (req.user.role !== "ADMIN" && req.user.id !== Number(id)) {
-      return res
-        .status(403)
-        .json({ message: getMessage(lang, "accessDenied") });
+      throw new AppError(getMessage(lang, "accessDenied"), 403);
     }
 
-    try {
-      const [updated] = await User.update(
-        { name, surname, nickName, age, role },
-        { where: { id } }
-      );
+    const [updated] = await User.update(
+      { name, surname, nickName, age, role },
+      { where: { id } }
+    );
 
-      if (!updated) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      const updatedUser = await User.findByPk(id);
-      res.json({
-        data: updatedUser,
-        message: getMessage(lang, "userUpdated"),
-      });
-    } catch (error) {
-      res.status(500).json({
-        message: getMessage(lang, "errorUpdatingUser"),
-        error,
-      });
+    if (!updated) {
+      throw new AppError("User not found", 404);
     }
+
+    const updatedUser = await User.findByPk(id);
+
+    return res.json({
+      data: updatedUser,
+      message: getMessage(lang, "userUpdated"),
+    });
   }
   //INFO: Without authorization
 );

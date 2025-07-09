@@ -9,9 +9,10 @@ import {
 } from "../validators/authValidator";
 import { validateRequest } from "../middleware/validationMiddleware";
 import { getMessage } from "../services/localizationService";
+import { AppError } from "../utils/AppError";
 
 const router: Router = Router();
-const JWT_SECRET = "goodRequest987"; //TODO generate this
+const JWT_SECRET = "e292472cf1c2248cbf5c386844d50365ee00af35"; //TODO generate this
 
 router.post(
   "/register",
@@ -38,10 +39,7 @@ router.post(
         message: getMessage(language, "registrationSuccess"),
       });
     } catch (error) {
-      res.status(500).json({
-        message: getMessage(language, "registrationError"),
-        error,
-      });
+      throw new AppError("Registration failed", 500, error);
     }
   }
 );
@@ -63,9 +61,7 @@ router.post(
         user && (await bcrypt.compare(password, user.password));
 
       if (!isValidPassword) {
-        return res
-          .status(401)
-          .json({ message: getMessage(language, "invalidCredentials") });
+        throw new AppError(getMessage(language, "invalidCredentials"), 401);
       }
 
       const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
@@ -77,10 +73,7 @@ router.post(
         message: getMessage(language, "loginSuccess"),
       });
     } catch (error) {
-      res.status(500).json({
-        message: getMessage(language, "loginError"),
-        error,
-      });
+      throw new AppError("Login failed", 500, error);
     }
   }
 );
