@@ -4,7 +4,8 @@ import path from "path";
 import { AppError } from "../utils/AppError";
 import { getMessage } from "../services/localizationService";
 
-const logPath = path.join(__dirname, "..", "logs", "error.log");
+const logDir = path.join(__dirname, "..", "logs");
+const logPath = path.join(logDir, "error.log");
 
 export function errorHandler(
   err: any,
@@ -20,6 +21,10 @@ export function errorHandler(
   // Log do konzoly
   if (statusCode >= 500) {
     console.error(`[${timestamp}] [${statusCode}] ${errorMessage}`);
+
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir);
+    }
 
     // Log do súboru
     fs.appendFileSync(

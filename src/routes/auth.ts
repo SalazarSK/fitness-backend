@@ -12,7 +12,7 @@ import { getMessage } from "../services/localizationService";
 import { AppError } from "../utils/AppError";
 
 const router: Router = Router();
-const JWT_SECRET = "e292472cf1c2248cbf5c386844d50365ee00af35"; //TODO generate this
+const JWT_SECRET = "e292472cf1c2248cbf5c386844d50365ee00af35";
 
 router.post(
   "/register",
