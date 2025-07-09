@@ -6,74 +6,91 @@ import {
   authorizeAdmin,
 } from "../middleware/authMiddleware";
 import { Op } from "sequelize";
+import { validateRequest } from "../middleware/validationMiddleware";
+import {
+  createExerciseValidation,
+  updateExerciseValidation,
+  deleteExerciseValidation,
+  getExerciseQueryValidation,
+} from "../validators/exerciseValidator";
 
 const router = Router();
 
 const { Exercise, Program } = models;
 
+function parseExerciseQuery(query: any) {
+  const rawPage = query.page as string | undefined;
+  const rawLimit = query.limit as string | undefined;
+  const rawProgramID = query.programID as string | undefined;
+  const rawSearch = query.search as string | undefined;
+
+  const page = rawPage ? parseInt(rawPage) : null;
+  const limit = rawLimit ? parseInt(rawLimit) : null;
+
+  return {
+    page,
+    limit,
+    programID: rawProgramID,
+    search: rawSearch,
+  };
+}
+
 export default () => {
-  router.get("/", async (req: Request, res: Response): Promise<any> => {
-    const rawPage = req.query.page as string | undefined;
-    const rawLimit = req.query.limit as string | undefined;
-    const rawProgramID = req.query.programID as string | undefined;
-    const rawSearch = req.query.search as string | undefined;
+  router.get(
+    "/",
+    getExerciseQueryValidation,
+    validateRequest,
+    async (req: Request, res: Response): Promise<any> => {
+      const { page, limit, programID, search } = parseExerciseQuery(req.query);
 
-    const page = rawPage ? parseInt(rawPage) : null;
-    const limit = rawLimit ? parseInt(rawLimit) : null;
+      const where: any = {};
+      if (programID) where.programID = programID;
+      if (search) where.name = { [Op.iLike]: `%${search}%` };
 
-    const where: any = {};
-    if (rawProgramID) where.programID = rawProgramID;
-    if (rawSearch) where.name = { [Op.iLike]: `%${rawSearch}%` };
+      try {
+        const total = await Exercise.count({ where });
 
-    try {
-      const count = await Exercise.count({ where });
+        const finalLimit =
+          page === null && limit === null ? total : limit ?? 10;
+        const finalPage = page ?? 1;
+        const offset = (finalPage - 1) * finalLimit;
 
-      let finalLimit = 10;
-      let finalPage = 1;
+        if (offset >= total && total > 0) {
+          return res.status(404).json({ message: "Page does not exist" });
+        }
 
-      if (!page && !limit) {
-        finalLimit = count;
-        finalPage = 1;
-      } else {
-        if (page && page >= 1) finalPage = page;
-        if (limit && limit >= 1) finalLimit = limit;
-      }
-
-      const offset = (finalPage - 1) * finalLimit;
-
-      const { rows: exercises } = await Exercise.findAndCountAll({
-        where,
-        include: [{ model: Program }],
-        offset,
-        limit: finalLimit,
-        order: [["createdAt", "DESC"]],
-      });
-
-      if (offset >= count && count > 0) {
-        return res.status(404).json({ message: "Page does not exist" });
-      }
-
-      return res.json({
-        data: exercises,
-        pagination: {
-          total: count,
-          page: finalPage,
+        const { rows: exercises } = await Exercise.findAndCountAll({
+          where,
+          include: [{ model: Program }],
+          offset,
           limit: finalLimit,
-          pages: Math.ceil(count / finalLimit),
-        },
-        message: "List of exercises",
-      });
-    } catch (error) {
-      return res
-        .status(500)
-        .json({ message: "Error fetching exercises", error });
+          order: [["createdAt", "DESC"]],
+        });
+
+        return res.json({
+          data: exercises,
+          pagination: {
+            total,
+            page: finalPage,
+            limit: finalLimit,
+            pages: Math.ceil(total / finalLimit),
+          },
+          message: "List of exercises",
+        });
+      } catch (error) {
+        return res
+          .status(500)
+          .json({ message: "Error fetching exercises", error });
+      }
     }
-  });
+  );
 
   router.post(
     "/",
     authenticateToken,
     authorizeAdmin,
+    createExerciseValidation,
+    validateRequest,
     async (req: Request, res: Response): Promise<any> => {
       const { name, difficulty, programID } = req.body;
       if (!name || !difficulty || !programID) {
@@ -95,6 +112,8 @@ export default () => {
     "/:id",
     authenticateToken,
     authorizeAdmin,
+    deleteExerciseValidation,
+    validateRequest,
     async (req: Request, res: Response): Promise<any> => {
       const { id } = req.params;
 
@@ -117,6 +136,8 @@ export default () => {
     "/:id",
     authenticateToken,
     authorizeAdmin,
+    updateExerciseValidation,
+    validateRequest,
     async (req: Request, res: Response): Promise<any> => {
       const { id } = req.params;
       const { name, description, duration } = req.body;

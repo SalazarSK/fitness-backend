@@ -6,6 +6,15 @@ import {
   authorizeAdmin,
 } from "../middleware/authMiddleware";
 
+import {
+  createProgramValidation,
+  updateProgramValidation,
+  deleteProgramValidation,
+  assignExerciseToProgramValidation,
+  removeExerciseFromProgramValidation,
+} from "../validators/programsValidator";
+import { validateRequest } from "../middleware/validationMiddleware";
+
 const router = Router();
 
 const { Program, Exercise } = models;
@@ -26,6 +35,8 @@ export default () => {
     "/",
     authenticateToken,
     authorizeAdmin,
+    createProgramValidation,
+    validateRequest,
     async (req: Request, res: Response): Promise<any> => {
       const { name } = req.body;
       if (!name) return res.status(400).json({ message: "Name is required" });
@@ -47,6 +58,8 @@ export default () => {
     "/:id",
     authenticateToken,
     authorizeAdmin,
+    updateProgramValidation,
+    validateRequest,
     async (req: Request, res: Response): Promise<any> => {
       const { id } = req.params;
       const { name } = req.body;
@@ -72,6 +85,8 @@ export default () => {
     "/:id",
     authenticateToken,
     authorizeAdmin,
+    deleteProgramValidation,
+    validateRequest,
     async (req: Request, res: Response): Promise<any> => {
       const { id } = req.params;
 
@@ -93,6 +108,8 @@ export default () => {
     "/:programId/add-exercise/:exerciseId",
     authenticateToken,
     authorizeAdmin,
+    assignExerciseToProgramValidation,
+    validateRequest,
     async (req: Request, res: Response): Promise<any> => {
       const { programId, exerciseId } = req.params;
 
@@ -132,6 +149,8 @@ export default () => {
     "/:programId/remove-exercise/:exerciseId",
     authenticateToken,
     authorizeAdmin,
+    removeExerciseFromProgramValidation,
+    validateRequest,
     async (req: Request, res: Response): Promise<any> => {
       const { exerciseId } = req.params;
 
