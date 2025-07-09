@@ -7,6 +7,7 @@ import ExerciseRouter from "./routes/exercises";
 import AuthRouter from "./routes/auth";
 import UserRouter from "./routes/users";
 import CompletedExerciseRouter from "./routes/completedExercise";
+import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
@@ -33,5 +34,7 @@ const startServer = async () => {
 
 startServer();
 //httpServer.listen(8000).on('listening', () => console.log(`Server started at port ${8000}`))
+
+app.use(errorHandler);
 
 export default httpServer;
