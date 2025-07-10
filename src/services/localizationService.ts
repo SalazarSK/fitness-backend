@@ -1,90 +1,17 @@
-const messages = {
-  en: {
-    registrationSuccess: "You have successfully registered",
-    registrationError: "Error registration",
-    loginSuccess: "Login successful",
-    loginError: "Error login",
-    invalidCredentials: "Invalid credentials",
-    exerciseTracked: "Exercise tracked",
-    errorTrackingExercise: "Error tracking exercise",
-    completedExercisesList: "Completed exercises list",
-    errorFetchingCompletedExercises: "Error fetching completed exercises",
-    userDetailWithExercises: "User detail with completed exercises",
-    errorFetchingUser: "Error fetching user",
-    completedExerciseRemoved: "Completed exercise removed",
-    errorRemovingCompletedExercise: "Error removing completed exercise",
-    exerciseCreated: "Exercise created",
-    errorCreatingExercise: "Error creating exercise",
-    exerciseDeleted: "Exercise deleted",
-    errorDeletingExercise: "Error deleting exercise",
-    exerciseUpdated: "Exercise updated",
-    errorUpdatingExercise: "Error updating exercise",
-    pageNotExist: "Page does not exist",
-    exerciseList: "List of exercises",
-    programCreated: "Program created",
-    errorCreatingProgram: "Error creating program",
-    programUpdated: "Program updated",
-    errorUpdatingProgram: "Error updating program",
-    programDeleted: "Program deleted",
-    errorDeletingProgram: "Error deleting program",
-    exerciseAddedToProgram: "Exercise added to program",
-    errorAssigningExercise: "Error assigning exercise",
-    exerciseRemovedFromProgram: "Exercise removed from program",
-    errorRemovingExercise: "Error removing exercise",
-    userUpdated: "User updated",
-    errorUpdatingUser: "Error updating user",
-    listOfUsers: "List of users",
-    userProfileData: "User profile data",
-    accessDenied: "Access denied",
-    internalServerError: "Something went wrong",
-    unexpectedError: "Unexpected error",
-  },
-  sk: {
-    registrationSuccess: "Úspešná registrácia",
-    registrationError: "Chyba pri registrácii",
-    loginSuccess: "Prihlásenie prebehlo úspešne",
-    loginError: "Chyba pri prihlásaný",
-    invalidCredentials: "Neplatné prihlasovacie údaje",
-    exerciseTracked: "Cvičenie bolo zaznamenané",
-    errorTrackingExercise: "Chyba pri zaznamenávaní cvičenia",
-    completedExercisesList: "Zoznam dokončených cvičení",
-    errorFetchingCompletedExercises: "Chyba pri načítaní dokončených cvičení",
-    userDetailWithExercises: "Detail používateľa s dokončenými cvičeniami",
-    errorFetchingUser: "Chyba pri načítaní používateľa",
-    completedExerciseRemoved: "Dokončené cvičenie bolo odstránené",
-    errorRemovingCompletedExercise:
-      "Chyba pri odstraňovaní dokončeného cvičenia",
-    exerciseCreated: "Cvičenie bolo vytvorené",
-    errorCreatingExercise: "Chyba pri vytváraní cvičenia",
-    exerciseDeleted: "Cvičenie bolo odstránené",
-    errorDeletingExercise: "Chyba pri odstraňovaní cvičenia",
-    exerciseUpdated: "Cvičenie bolo upravené",
-    errorUpdatingExercise: "Chyba pri upravovaní cvičenia",
-    pageNotExist: "Stránka neexistuje",
-    exerciseList: "Zoznam cvičení",
-    programCreated: "Program bol úspešne vytvorený",
-    errorCreatingProgram: "Chyba pri vytváraní programu",
-    programUpdated: "Program bol upravený",
-    errorUpdatingProgram: "Chyba pri upravovaní programu",
-    programDeleted: "Program bol odstránený",
-    errorDeletingProgram: "Chyba pri odstraňovaní programu",
-    exerciseAddedToProgram: "Cvičenie bolo pridané do programu",
-    errorAssigningExercise: "Chyba pri priraďovaní cvičenia",
-    exerciseRemovedFromProgram: "Cvičenie bolo odstránené z programu",
-    errorRemovingExercise: "Chyba pri odstraňovaní cvičenia",
-    userUpdated: "Používateľ bol upravený",
-    errorUpdatingUser: "Chyba pri upravovaní používateľa",
-    listOfUsers: "Zoznam používateľov",
-    userProfileData: "Údaje o používateľovi",
-    accessDenied: "Prístup bol zamietnutý",
-    internalServerError: "Niečo sa pokazilo",
-    unexpectedError: "Neočakávaná chyba",
-  },
-};
+import fs from "fs";
+import path from "path";
 
-export type MessageKey = keyof typeof messages.en;
+type Messages = Record<string, string>;
+const messages: Record<string, Messages> = {};
+
+["en", "sk"].forEach((lang) => {
+  const filePath = path.join(__dirname, `../locales/${lang}.json`);
+  messages[lang] = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+});
+
+export type MessageKey = keyof (typeof messages)["en"];
 
 export function getMessage(lang: string | undefined, key: MessageKey): string {
   const language = lang === "sk" ? "sk" : "en";
-  return messages[language][key];
+  return messages[language][key] || messages["en"][key] || "Unknown message";
 }

@@ -1,18 +1,24 @@
 import { Request, Response, NextFunction } from "express";
 import { validationResult } from "express-validator";
+import { AppError } from "../utils/AppError";
+import { getMessage } from "../services/localizationService";
 
 export const validateRequest = (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): void => {
   const errors = validationResult(req);
+  const language = req.headers.language as string;
+
   if (!errors.isEmpty()) {
-    res.status(400).json({
-      message: "Validation failed",
-      errors: errors.array(),
-    });
-    return;
+    const errorDetails = errors.array();
+    throw new AppError(
+      getMessage(language, "validationFailed"),
+      400,
+      errorDetails
+    );
   }
+
   next();
 };

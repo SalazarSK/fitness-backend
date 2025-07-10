@@ -8,6 +8,7 @@ import AuthRouter from "./routes/auth";
 import UserRouter from "./routes/users";
 import CompletedExerciseRouter from "./routes/completedExercise";
 import { errorHandler } from "./middleware/errorHandler";
+import { config } from "./config";
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
@@ -24,8 +25,8 @@ const startServer = async () => {
     await sequelize.authenticate();
     await sequelize.sync();
     console.log("Database is connected!!!");
-    httpServer.listen(8000, () =>
-      console.log(`Server started at port ${8000}`)
+    httpServer.listen(config.port, () =>
+      console.log(`Server started at port ${config.port}`)
     );
   } catch (error) {
     console.log("Sequelize sync error:", error);

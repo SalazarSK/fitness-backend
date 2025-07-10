@@ -1,9 +1,6 @@
 import { Router, Request, Response } from "express";
 import { models } from "../db";
-import {
-  authenticateToken,
-  authorizeAdmin,
-} from "../middleware/authMiddleware";
+import { authenticateToken, authorizeRole } from "../middleware/authMiddleware";
 
 import { validateRequest } from "../middleware/validationMiddleware";
 import {
@@ -13,6 +10,7 @@ import {
 } from "../validators/completedExerciseValidator";
 import { getMessage } from "../services/localizationService";
 import { AppError } from "../utils/AppError";
+import { USER_ROLE } from "../utils/user_role_enums";
 
 const router = Router();
 const { CompletedExercise, Exercise, User } = models;
@@ -20,6 +18,7 @@ const { CompletedExercise, Exercise, User } = models;
 router.post(
   "/",
   authenticateToken,
+  authorizeRole(USER_ROLE.USER),
   trackCompletedExerciseValidation,
   validateRequest,
   async (req: Request, res: Response): Promise<any> => {
@@ -51,6 +50,7 @@ router.post(
 router.get(
   "/me/completed-exercises",
   authenticateToken,
+  authorizeRole(USER_ROLE.USER),
   async (req: Request, res: Response): Promise<any> => {
     const lang = req.headers.language as string;
 
@@ -76,7 +76,7 @@ router.get(
 router.get(
   "/:id",
   authenticateToken,
-  authorizeAdmin,
+  authorizeRole(USER_ROLE.ADMIN),
   getUserCompletedExercisesValidation,
   validateRequest,
   async (req: Request, res: Response): Promise<any> => {
@@ -113,6 +113,7 @@ router.get(
 router.delete(
   "/:id",
   authenticateToken,
+  authorizeRole(USER_ROLE.USER),
   deleteCompletedExerciseValidation,
   validateRequest,
   async (req: Request, res: Response): Promise<any> => {

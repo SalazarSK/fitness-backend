@@ -1,4 +1,5 @@
 import { Model } from "sequelize";
+import { USER_ROLE } from "../../utils/user_role_enums";
 
 export interface UserInstance extends Model {
   id: number;
@@ -8,5 +9,5 @@ export interface UserInstance extends Model {
   email: string;
   password: string;
   age: number;
-  role: "ADMIN" | "USER";
+  role: USER_ROLE;
 }

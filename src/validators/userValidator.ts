@@ -1,4 +1,5 @@
 import { body, param } from "express-validator";
+import { USER_ROLE } from "../utils/user_role_enums";
 
 export const userIdParamValidation = [
   param("id")
@@ -20,6 +21,8 @@ export const updateUserValidation = [
     .withMessage("Age must be a positive number"),
   body("role")
     .optional()
-    .isIn(["USER", "ADMIN"])
-    .withMessage("Role must be either 'USER' or 'ADMIN'"),
+    .isIn(Object.values(USER_ROLE))
+    .withMessage(
+      `Role must be either '${USER_ROLE.USER}' or '${USER_ROLE.ADMIN}'`
+    ),
 ];

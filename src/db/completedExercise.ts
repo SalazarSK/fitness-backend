@@ -17,16 +17,6 @@ export default (
         autoIncrement: true,
         primaryKey: true,
       },
-      userID: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        primaryKey: true,
-      },
-      exerciseID: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        primaryKey: true,
-      },
       completedAt: {
         type: DataTypes.DATE,
         allowNull: false,

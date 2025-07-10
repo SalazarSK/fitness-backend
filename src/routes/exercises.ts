@@ -1,9 +1,6 @@
 import { Router, Request, Response } from "express";
 import { models } from "../db";
-import {
-  authenticateToken,
-  authorizeAdmin,
-} from "../middleware/authMiddleware";
+import { authenticateToken, authorizeRole } from "../middleware/authMiddleware";
 import { Op } from "sequelize";
 import { validateRequest } from "../middleware/validationMiddleware";
 import {
@@ -14,6 +11,7 @@ import {
 } from "../validators/exerciseValidator";
 import { getMessage } from "../services/localizationService";
 import { AppError } from "../utils/AppError";
+import { USER_ROLE } from "../utils/user_role_enums";
 
 const router = Router();
 const { Exercise, Program } = models;
@@ -40,6 +38,7 @@ export default () => {
     "/",
     getExerciseQueryValidation,
     validateRequest,
+    authorizeRole(USER_ROLE.USER),
     async (req: Request, res: Response): Promise<any> => {
       const lang = req.headers.language as string;
       const { page, limit, programID, search } = parseExerciseQuery(req.query);
@@ -82,7 +81,7 @@ export default () => {
   router.post(
     "/",
     authenticateToken,
-    authorizeAdmin,
+    authorizeRole(USER_ROLE.ADMIN),
     createExerciseValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
@@ -104,7 +103,7 @@ export default () => {
   router.delete(
     "/:id",
     authenticateToken,
-    authorizeAdmin,
+    authorizeRole(USER_ROLE.ADMIN),
     deleteExerciseValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
@@ -125,7 +124,7 @@ export default () => {
   router.put(
     "/:id",
     authenticateToken,
-    authorizeAdmin,
+    authorizeRole(USER_ROLE.ADMIN),
     updateExerciseValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {

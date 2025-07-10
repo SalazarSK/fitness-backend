@@ -1,8 +1,9 @@
 import { JwtPayload } from "jsonwebtoken";
+import { USER_ROLE } from "../../utils/user_role_enums";
 
 export interface JwtUserPayload extends JwtPayload {
   id: number;
-  role: "ADMIN" | "USER";
+  role: USER_ROLE;
 }
 
 declare global {

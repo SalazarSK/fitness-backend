@@ -10,9 +10,10 @@ import {
 import { validateRequest } from "../middleware/validationMiddleware";
 import { getMessage } from "../services/localizationService";
 import { AppError } from "../utils/AppError";
+import { config } from "../config";
 
 const router: Router = Router();
-const JWT_SECRET = "e292472cf1c2248cbf5c386844d50365ee00af35";
+const JWT_SECRET = config.jwtSecret;
 
 router.post(
   "/register",
@@ -52,29 +53,25 @@ router.post(
     const { email, password } = req.body;
     const language = req.headers.language as string;
 
-    try {
-      const user = (await models.User.findOne({
-        where: { email },
-      })) as UserInstance;
+    const user = (await models.User.findOne({
+      where: { email },
+    })) as UserInstance;
 
-      const isValidPassword =
-        user && (await bcrypt.compare(password, user.password));
+    const isValidPassword =
+      user && (await bcrypt.compare(password, user.password));
 
-      if (!isValidPassword) {
-        throw new AppError(getMessage(language, "invalidCredentials"), 401);
-      }
-
-      const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
-        expiresIn: "1h",
-      });
-
-      res.json({
-        data: { token },
-        message: getMessage(language, "loginSuccess"),
-      });
-    } catch (error) {
-      throw new AppError("Login failed", 500, error);
+    if (!isValidPassword) {
+      throw new AppError(getMessage(language, "invalidCredentials"), 401);
     }
+
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    res.json({
+      data: { token },
+      message: getMessage(language, "loginSuccess"),
+    });
   }
 );
 

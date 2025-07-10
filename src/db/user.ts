@@ -1,4 +1,5 @@
 import { DataTypes, Sequelize } from "sequelize";
+import { USER_ROLE } from "../utils/user_role_enums";
 
 export default (sequelize: Sequelize, modelName: string) => {
   const User = sequelize.define(
@@ -49,8 +50,8 @@ export default (sequelize: Sequelize, modelName: string) => {
         },
       },
       role: {
-        type: DataTypes.ENUM("ADMIN", "USER"),
-        defaultValue: "USER",
+        type: DataTypes.ENUM(...Object.values(USER_ROLE)),
+        defaultValue: USER_ROLE.USER,
       },
     },
     {

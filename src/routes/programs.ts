@@ -1,9 +1,6 @@
 import { Router, Request, Response } from "express";
 import { models } from "../db";
-import {
-  authenticateToken,
-  authorizeAdmin,
-} from "../middleware/authMiddleware";
+import { authenticateToken, authorizeRole } from "../middleware/authMiddleware";
 import {
   createProgramValidation,
   updateProgramValidation,
@@ -14,26 +11,32 @@ import {
 import { validateRequest } from "../middleware/validationMiddleware";
 import { getMessage } from "../services/localizationService";
 import { AppError } from "../utils/AppError";
+import { USER_ROLE } from "../utils/user_role_enums";
 
 const router = Router();
 const { Program, Exercise } = models;
 
 export default () => {
-  router.get("/", async (req: Request, res: Response): Promise<any> => {
-    const lang = req.headers.language as string;
+  router.get(
+    "/",
+    authenticateToken,
+    authorizeRole(USER_ROLE.USER),
+    async (req: Request, res: Response): Promise<any> => {
+      const lang = req.headers.language as string;
 
-    const programs = await Program.findAll();
+      const programs = await Program.findAll();
 
-    return res.json({
-      data: programs,
-      message: getMessage(lang, "exerciseList"),
-    });
-  });
+      return res.json({
+        data: programs,
+        message: getMessage(lang, "exerciseList"),
+      });
+    }
+  );
 
   router.post(
     "/",
     authenticateToken,
-    authorizeAdmin,
+    authorizeRole(USER_ROLE.ADMIN),
     createProgramValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
@@ -54,7 +57,7 @@ export default () => {
   router.put(
     "/:id",
     authenticateToken,
-    authorizeAdmin,
+    authorizeRole(USER_ROLE.ADMIN),
     updateProgramValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
@@ -77,7 +80,7 @@ export default () => {
   router.delete(
     "/:id",
     authenticateToken,
-    authorizeAdmin,
+    authorizeRole(USER_ROLE.ADMIN),
     deleteProgramValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
@@ -96,7 +99,7 @@ export default () => {
   router.put(
     "/:programId/add-exercise/:exerciseId",
     authenticateToken,
-    authorizeAdmin,
+    authorizeRole(USER_ROLE.ADMIN),
     assignExerciseToProgramValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {
@@ -125,7 +128,7 @@ export default () => {
   router.put(
     "/:programId/remove-exercise/:exerciseId",
     authenticateToken,
-    authorizeAdmin,
+    authorizeRole(USER_ROLE.ADMIN),
     removeExerciseFromProgramValidation,
     validateRequest,
     async (req: Request, res: Response): Promise<any> => {

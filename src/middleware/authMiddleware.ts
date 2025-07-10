@@ -1,8 +1,17 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { JwtUserPayload } from "../types/schemas/jwt";
+import { USER_ROLE } from "../utils/user_role_enums";
+import { config } from "../config";
+import { AppError } from "../utils/AppError";
+import { getMessage } from "../services/localizationService";
 
-const JWT_SECRET = "goodRequest987";
+const JWT_SECRET = config.jwtSecret;
+
+const roleHierarchy: Record<USER_ROLE, number> = {
+  [USER_ROLE.USER]: 1,
+  [USER_ROLE.ADMIN]: 2,
+};
 
 export const authenticateToken = (
   req: Request,
@@ -11,16 +20,15 @@ export const authenticateToken = (
 ): void => {
   const authHeader = req.headers["authorization"];
   const token = authHeader?.split(" ")[1];
+  const language = req.headers.language as string;
 
   if (!token) {
-    res.status(401).json({ message: "No token provided" });
-    return;
+    throw new AppError(getMessage(language, "noTokenProvided"), 401);
   }
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
-      res.status(403).json({ message: "Invalid token" });
-      return;
+      throw new AppError(getMessage(language, "invalidToken"), 403);
     }
 
     req.user = user as JwtUserPayload;
@@ -28,14 +36,19 @@ export const authenticateToken = (
   });
 };
 
-export const authorizeAdmin = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  if (req.user?.role !== "ADMIN") {
-    res.status(403).json({ message: "Access denied: Admins only" });
-    return;
-  }
-  next();
+export const authorizeRole = (minRole: USER_ROLE) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const language = req.headers.language as string;
+    const userRole = req.user?.role;
+
+    if (!userRole || roleHierarchy[userRole] < roleHierarchy[minRole]) {
+      throw new AppError(
+        getMessage(language, "accessDenied") +
+          `: ${minRole} ${getMessage(language, "required")}`,
+        403
+      );
+    }
+
+    next();
+  };
 };
